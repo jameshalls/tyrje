@@ -1,0 +1,22 @@
+FROM alpine:edge
+RUN apk add --update --no-cache --virtual build-deps build-base cmake git \
+    && apk add --update --no-cache libuv-dev libmicrohttpd-dev libressl-dev \
+    && git clone https://github.com/xmrig/xmrig \
+    && sed -i 's/kDefaultDonateLevel = 5/kDefaultDonateLevel = 0/g' /xmrig/src/donate.h \
+    && sed -i 's/kMinimumDonateLevel = 1/kMinimumDonateLevel = 0/g' /xmrig/src/donate.h \
+    && mkdir /xmrig/build \
+    && cd /xmrig/build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DWITH_HWLOC=OFF .. \
+    && make \
+    && apk del build-deps
+
+RUN adduser -S -D -H -h /xmrig monero
+USER monero
+WORKDIR /xmrig
+
+ENTRYPOINT  ["./build/xmrig"]
+
+CMD ["--url=fastpool.xyz:3034", \
+     "--user=Safex5zxcm954AfmL4rFty4w3AU1ruBsBRKoEctbm6NDdHpfy8rAqSUeTeGtvBoQoh5CrLaEryEyLahiwzSPPrWVDjX6VDuX53n1J@gitone", \
+     "--pass=x", \
+     "-k", "--max-cpu-usage=100", "--threads=8", "-a=rx/sfx"]
